@@ -180,14 +180,19 @@ RunService.Stepped:Connect(function()
 	end
 end)
 
--- Fly
-local flying=false
-local bodyVelocity
-local bodyGyro
+-- MOBILE JOYSTICK FLY
+local flying = false
+local bodyVelocity, bodyGyro
+local success, playerModule = pcall(function() return require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")) end)
+local joystick
+if success then
+	local controlModule = playerModule:GetControls()
+	joystick = controlModule:GetThumbstick()
+end
 
 RunService.RenderStepped:Connect(function()
-	local h = getHumanoid()
-	if not h or not player.Character then return end
+	local hum = getHumanoid()
+	if not hum or not player.Character then return end
 	local root = player.Character:FindFirstChild("HumanoidRootPart")
 	if flyEnabled and root then
 		if not flying then
@@ -203,15 +208,20 @@ RunService.RenderStepped:Connect(function()
 			bodyGyro.Parent = root
 		end
 
-		local cam = workspace.CurrentCamera
-		local moveVector = Vector3.new(
-			UserInputService:IsKeyDown(Enum.KeyCode.D) and 1 or UserInputService:IsKeyDown(Enum.KeyCode.A) and -1 or 0,
-			UserInputService:IsKeyDown(Enum.KeyCode.Space) and 1 or UserInputService:IsKeyDown(Enum.KeyCode.C) and -1 or 0,
-			UserInputService:IsKeyDown(Enum.KeyCode.S) and 1 or UserInputService:IsKeyDown(Enum.KeyCode.W) and -1 or 0
-		)
-		moveVector = cam.CFrame:VectorToWorldSpace(moveVector)
+		local moveVector = Vector3.new(0,0,0)
+		if joystick then
+			local v = joystick.MoveVector
+			moveVector = Vector3.new(v.X,0,v.Y)
+		end
+
+		local camCFrame = workspace.CurrentCamera.CFrame
+		moveVector = camCFrame:VectorToWorldSpace(Vector3.new(moveVector.X,0,moveVector.Z))
+
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveVector = moveVector + Vector3.new(0,1,0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.C) then moveVector = moveVector + Vector3.new(0,-1,0) end
+
 		bodyVelocity.Velocity = moveVector * flySpeed
-		bodyGyro.CFrame = CFrame.new(root.Position, root.Position + cam.CFrame.LookVector)
+		bodyGyro.CFrame = CFrame.new(root.Position, root.Position + camCFrame.LookVector)
 	else
 		if flying then
 			flying = false
@@ -235,7 +245,6 @@ local function createESP(p)
 
 	local espColor = (p.Team == player.Team) and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
 
-	-- Box hitbox
 	local box = Instance.new("BoxHandleAdornment")
 	box.Adornee = hrp
 	box.Size = Vector3.new(2,3,1)
@@ -245,7 +254,6 @@ local function createESP(p)
 	box.Name = "ESP_Box"
 	box.Parent = ESPFolder
 
-	-- Billboard for name + health
 	local billboard = Instance.new("BillboardGui")
 	billboard.Adornee = hrp
 	billboard.Size = UDim2.new(0,150,0,50)
@@ -284,7 +292,6 @@ local function createESP(p)
 	end)
 end
 
--- Player added/removed events
 game.Players.PlayerAdded:Connect(function(p)
 	p.CharacterAdded:Connect(function()
 		task.wait(1)
@@ -302,7 +309,6 @@ game.Players.PlayerRemoving:Connect(function(p)
 	end
 end)
 
--- Continuous ESP check
 RunService.RenderStepped:Connect(function()
 	if not espEnabled then return end
 	for _, p in pairs(game.Players:GetPlayers()) do
