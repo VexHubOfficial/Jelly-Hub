@@ -1,0 +1,367 @@
+--// Jelly's Panel by Vex TM (Sleek Full Version + Smooth Fade)
+--// Place in StarterPlayerScripts
+
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local INCREMENT = 2
+local FLY_SPEED_INCREMENT = 2
+
+-- STATES
+local flyEnabled, noclipEnabled, infJumpEnabled, espEnabled = false, false, false, false
+local flySpeed = 50
+
+-- MAIN GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "JellyAdminGUI"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
+
+-- Toggle Button (always visible)
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0,100,0,50)
+toggleButton.Position = UDim2.new(0.05,0,0.05,0)
+toggleButton.Text = "Jelly"
+toggleButton.TextColor3 = Color3.new(1,1,1)
+toggleButton.BackgroundColor3 = Color3.fromRGB(0,170,255)
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 18
+toggleButton.Parent = screenGui
+toggleButton.Active = true
+toggleButton.Draggable = true
+local toggleUICorner = Instance.new("UICorner", toggleButton)
+toggleUICorner.CornerRadius = UDim.new(0,12)
+local toggleUIStroke = Instance.new("UIStroke", toggleButton)
+toggleUIStroke.Thickness = 2
+toggleUIStroke.Color = Color3.fromRGB(0,200,255)
+
+-- Admin Panel
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0,360,0,440)
+frame.Position = UDim2.new(0.5,-180,0.5,-220)
+frame.BackgroundColor3 = Color3.fromRGB(25,25,35)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+frame.BackgroundTransparency = 0.2 -- Start at 20% transparent
+frame.Visible = true
+
+local panelCorner = Instance.new("UICorner", frame)
+panelCorner.CornerRadius = UDim.new(0,20)
+local panelGradient = Instance.new("UIGradient", frame)
+panelGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0,Color3.fromRGB(0,150,255)), ColorSequenceKeypoint.new(1,Color3.fromRGB(0,120,255))}
+panelGradient.Rotation = 90
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,0,50)
+title.Position = UDim2.new(0,0,0,0)
+title.Text = "Jelly's Panel"
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.TextSize = 24
+title.Parent = frame
+
+-- Credit
+local credit = Instance.new("TextLabel")
+credit.Size = UDim2.new(1,0,0,20)
+credit.Position = UDim2.new(0,0,0,35)
+credit.Text = "by Vex TM"
+credit.TextColor3 = Color3.fromRGB(200,200,200)
+credit.BackgroundTransparency = 1
+credit.Font = Enum.Font.Gotham
+credit.TextSize = 14
+credit.Parent = frame
+
+-- Helper function to create buttons
+local function createButton(name,pos,parentFrame)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0,150,0,40)
+	btn.Position = pos
+	btn.Text = name
+	btn.TextColor3 = Color3.fromRGB(255,255,255)
+	btn.BackgroundColor3 = Color3.fromRGB(0,120,255)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 18
+	btn.Parent = parentFrame
+	local corner = Instance.new("UICorner", btn)
+	corner.CornerRadius = UDim.new(0,10)
+	local stroke = Instance.new("UIStroke", btn)
+	stroke.Thickness = 2
+	stroke.Color = Color3.fromRGB(0,200,255)
+	-- Hover effect
+	btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(0,150,255) end)
+	btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(0,120,255) end)
+	return btn
+end
+
+-- Labels and Buttons
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(0,360,0,30)
+speedLabel.Position = UDim2.new(0,0,0,70)
+speedLabel.BackgroundTransparency = 1
+speedLabel.TextColor3 = Color3.fromRGB(255,255,255)
+speedLabel.Font = Enum.Font.Gotham
+speedLabel.TextSize = 18
+speedLabel.Text = "WalkSpeed: 16"
+speedLabel.Parent = frame
+
+local speedMinus = createButton("-",UDim2.new(0,20,0,100),frame)
+local speedPlus = createButton("+",UDim2.new(0,190,0,100),frame)
+
+local jumpLabel = Instance.new("TextLabel")
+jumpLabel.Size = UDim2.new(0,360,0,30)
+jumpLabel.Position = UDim2.new(0,0,0,150)
+jumpLabel.BackgroundTransparency = 1
+jumpLabel.TextColor3 = Color3.fromRGB(255,255,255)
+jumpLabel.Font = Enum.Font.Gotham
+jumpLabel.TextSize = 18
+jumpLabel.Text = "JumpPower: 50"
+jumpLabel.Parent = frame
+
+local jumpMinus = createButton("-",UDim2.new(0,20,0,180),frame)
+local jumpPlus = createButton("+",UDim2.new(0,190,0,180),frame)
+
+local espButton = createButton("ESP: OFF",UDim2.new(0,20,0,230),frame)
+local infJumpButton = createButton("InfJump: OFF",UDim2.new(0,190,0,230),frame)
+local noclipButton = createButton("NoClip: OFF",UDim2.new(0,20,0,280),frame)
+local flyButton = createButton("Fly: OFF",UDim2.new(0,190,0,280),frame)
+
+local flySpeedLabel = Instance.new("TextLabel")
+flySpeedLabel.Size = UDim2.new(0,360,0,30)
+flySpeedLabel.Position = UDim2.new(0,0,0,330)
+flySpeedLabel.BackgroundTransparency = 1
+flySpeedLabel.TextColor3 = Color3.fromRGB(255,255,255)
+flySpeedLabel.Font = Enum.Font.Gotham
+flySpeedLabel.TextSize = 18
+flySpeedLabel.Text = "FlySpeed: 50"
+flySpeedLabel.Parent = frame
+
+local flyMinus = createButton("-",UDim2.new(0,20,0,360),frame)
+local flyPlus = createButton("+",UDim2.new(0,190,0,360),frame)
+
+-- Functions
+local function getHumanoid()
+	if player.Character then
+		return player.Character:FindFirstChildOfClass("Humanoid")
+	end
+end
+
+local function updateLabels()
+	local hum = getHumanoid()
+	if hum then
+		speedLabel.Text = "WalkSpeed: "..math.floor(hum.WalkSpeed)
+		jumpLabel.Text = "JumpPower: "..math.floor(hum.JumpPower)
+	end
+	flySpeedLabel.Text = "FlySpeed: "..math.floor(flySpeed)
+end
+
+-- Button actions
+speedMinus.MouseButton1Click:Connect(function() local h=getHumanoid();if h then h.WalkSpeed-=INCREMENT end;updateLabels() end)
+speedPlus.MouseButton1Click:Connect(function() local h=getHumanoid();if h then h.WalkSpeed+=INCREMENT end;updateLabels() end)
+jumpMinus.MouseButton1Click:Connect(function() local h=getHumanoid();if h then h.JumpPower-=INCREMENT end;updateLabels() end)
+jumpPlus.MouseButton1Click:Connect(function() local h=getHumanoid();if h then h.JumpPower+=INCREMENT end;updateLabels() end)
+flyMinus.MouseButton1Click:Connect(function() flySpeed-=FLY_SPEED_INCREMENT;updateLabels() end)
+flyPlus.MouseButton1Click:Connect(function() flySpeed+=FLY_SPEED_INCREMENT;updateLabels() end)
+espButton.MouseButton1Click:Connect(function() espEnabled = not espEnabled; espButton.Text="ESP: "..(espEnabled and "ON" or "OFF") end)
+infJumpButton.MouseButton1Click:Connect(function() infJumpEnabled = not infJumpEnabled; infJumpButton.Text="InfJump: "..(infJumpEnabled and "ON" or "OFF") end)
+noclipButton.MouseButton1Click:Connect(function() noclipEnabled = not noclipEnabled; noclipButton.Text="NoClip: "..(noclipEnabled and "ON" or "OFF") end)
+flyButton.MouseButton1Click:Connect(function() flyEnabled = not flyEnabled; flyButton.Text="Fly: "..(flyEnabled and "ON" or "OFF") end)
+
+-- Smooth fade toggle
+local panelVisible = true
+local function togglePanel()
+	panelVisible = not panelVisible
+	local goal = {}
+	if panelVisible then
+		goal.BackgroundTransparency = 0.2
+	else
+		goal.BackgroundTransparency = 1
+	end
+	local tweenInfo = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local tween = TweenService:Create(frame, tweenInfo, goal)
+	tween:Play()
+end
+toggleButton.MouseButton1Click:Connect(togglePanel)
+
+-- Infinite Jump
+UserInputService.JumpRequest:Connect(function()
+	if infJumpEnabled then
+		local h = getHumanoid()
+		if h then h:ChangeState(Enum.HumanoidStateType.Jumping) end
+	end
+end)
+
+-- NoClip
+RunService.Stepped:Connect(function()
+	if noclipEnabled and player.Character then
+		for _,p in pairs(player.Character:GetDescendants()) do
+			if p:IsA("BasePart") then p.CanCollide=false end
+		end
+	end
+end)
+
+-- MOBILE JOYSTICK FLY
+local flying = false
+local bodyVelocity, bodyGyro
+local success, playerModule = pcall(function() return require(player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule")) end)
+local joystick
+if success then
+	local controlModule = playerModule:GetControls()
+	joystick = controlModule:GetThumbstick()
+end
+
+RunService.RenderStepped:Connect(function()
+	local hum = getHumanoid()
+	if not hum or not player.Character then return end
+	local root = player.Character:FindFirstChild("HumanoidRootPart")
+	if flyEnabled and root then
+		if not flying then
+			flying = true
+			bodyVelocity = Instance.new("BodyVelocity")
+			bodyVelocity.MaxForce = Vector3.new(9e9,9e9,9e9)
+			bodyVelocity.Velocity = Vector3.new(0,0,0)
+			bodyVelocity.Parent = root
+
+			bodyGyro = Instance.new("BodyGyro")
+			bodyGyro.MaxTorque = Vector3.new(9e9,9e9,9e9)
+			bodyGyro.CFrame = root.CFrame
+			bodyGyro.Parent = root
+		end
+
+		local moveVector = Vector3.new(0,0,0)
+		if joystick then
+			local v = joystick.MoveVector
+			moveVector = Vector3.new(v.X,0,v.Y)
+		end
+
+		local camCFrame = workspace.CurrentCamera.CFrame
+		moveVector = camCFrame:VectorToWorldSpace(Vector3.new(moveVector.X,0,moveVector.Z))
+
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+			moveVector = moveVector + Vector3.new(0,1,0)
+		end
+		if UserInputService:IsKeyDown(Enum.KeyCode.C) then
+			moveVector = moveVector + Vector3.new(0,-1,0)
+		end
+
+		bodyVelocity.Velocity = moveVector * flySpeed
+		bodyGyro.CFrame = CFrame.new(root.Position, root.Position + camCFrame.LookVector)
+	else
+		if flying then
+			flying = false
+			if bodyVelocity then bodyVelocity:Destroy() end
+			if bodyGyro then bodyGyro:Destroy() end
+		end
+	end
+end)
+
+-- ESP (team-colored)
+local ESPFolder = Instance.new("Folder")
+ESPFolder.Name = "ESP_Objects"
+ESPFolder.Parent = workspace
+
+local function createESP(p)
+	if p == player then return end
+	if not p.Character then return end
+	local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+	local hum = p.Character:FindFirstChildOfClass("Humanoid")
+	if not hrp or not hum then return end
+
+	local espColor = (p.Team == player.Team) and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
+
+	local box = Instance.new("BoxHandleAdornment")
+	box.Adornee = hrp
+	box.Size = Vector3.new(2,3,1)
+	box.Color3 = espColor
+	box.Transparency = 0.5
+	box.AlwaysOnTop = true
+	box.Name = "ESP_Box"
+	box.Parent = ESPFolder
+
+	local billboard = Instance.new("BillboardGui")
+	billboard.Adornee = hrp
+	billboard.Size = UDim2.new(0,150,0,50)
+	billboard.AlwaysOnTop = true
+	billboard.StudsOffset = Vector3.new(0,3,0)
+	billboard.Parent = ESPFolder
+
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(1,0,0.5,0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.TextColor3 = espColor
+	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.TextSize = 18
+	nameLabel.Text = p.DisplayName
+	nameLabel.Parent = billboard
+
+	local healthLabel = Instance.new("TextLabel")
+	healthLabel.Size = UDim2.new(1,0,0.5,0)
+	healthLabel.Position = UDim2.new(0,
+	healthLabel.Position = UDim2.new(0,0,0.5,0)
+	healthLabel.BackgroundTransparency = 1
+	healthLabel.TextColor3 = Color3.new(1,1,0)
+	healthLabel.Font = Enum.Font.GothamBold
+	healthLabel.TextSize = 16
+	healthLabel.Text = "Health: "..math.floor(hum.Health)
+	healthLabel.Parent = billboard
+
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		if not espEnabled or not p.Character or not hrp.Parent then
+			box:Destroy()
+			billboard:Destroy()
+			conn:Disconnect()
+			return
+		end
+		healthLabel.Text = "Health: "..math.floor(hum.Health)
+	end)
+end
+
+game.Players.PlayerAdded:Connect(function(p)
+	p.CharacterAdded:Connect(function()
+		task.wait(1)
+		if espEnabled then createESP(p) end
+	end)
+end)
+
+game.Players.PlayerRemoving:Connect(function(p)
+	for _, obj in pairs(ESPFolder:GetChildren()) do
+		if obj:IsA("BoxHandleAdornment") or obj:IsA("BillboardGui") then
+			if obj.Adornee and obj.Adornee.Parent == p.Character then
+				obj:Destroy()
+			end
+		end
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if not espEnabled then return end
+	for _, p in pairs(game.Players:GetPlayers()) do
+		if p ~= player and p.Character then
+			local exists = false
+			for _, obj in pairs(ESPFolder:GetChildren()) do
+				if obj:IsA("BoxHandleAdornment") and obj.Adornee == p.Character:FindFirstChild("HumanoidRootPart") then
+					exists = true
+					break
+				end
+			end
+			if not exists then
+				createESP(p)
+			end
+		end
+	end
+end)
+
+-- Initialize labels and humanoid defaults
+local hum = getHumanoid()
+if hum then
+	hum.WalkSpeed = 16
+	hum.JumpPower = 50
+end
+updateLabels()
