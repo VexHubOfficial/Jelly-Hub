@@ -20,7 +20,7 @@ screenGui.Name = "JellyAdminGUI"
 screenGui.Parent = playerGui
 screenGui.ResetOnSpawn = false
 
--- Toggle Button
+-- Toggle Button (always visible)
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0,100,0,50)
 toggleButton.Position = UDim2.new(0.05,0,0.05,0)
@@ -32,24 +32,36 @@ toggleButton.TextSize = 18
 toggleButton.Parent = screenGui
 toggleButton.Active = true
 toggleButton.Draggable = true
+local toggleUICorner = Instance.new("UICorner", toggleButton)
+toggleUICorner.CornerRadius = UDim.new(0,12)
 
 -- Admin Panel
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0,320,0,380)
-frame.Position = UDim2.new(0.5,-160,0.5,-190)
-frame.BackgroundColor3 = Color3.fromRGB(0,170,255)
+frame.Size = UDim2.new(0,340,0,420)
+frame.Position = UDim2.new(0.5,-170,0.5,-210)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+frame.BackgroundTransparency = 0
+frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
 frame.Parent = screenGui
-frame.Visible = true
+
+-- Gradient for panel
+local panelGradient = Instance.new("UIGradient", frame)
+panelGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0,Color3.fromRGB(0, 150, 255)), ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 120, 255))}
+panelGradient.Rotation = 90
+
+-- Panel corner
+local panelCorner = Instance.new("UICorner", frame)
+panelCorner.CornerRadius = UDim.new(0,16)
 
 -- Title
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1,0,0,40)
 title.Position = UDim2.new(0,0,0,0)
 title.Text = "Jelly's Panel"
-title.TextColor3 = Color3.new(1,1,1)
-title.BackgroundColor3 = Color3.fromRGB(0,120,255)
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.BackgroundTransparency = 1
 title.Font = Enum.Font.GothamBold
 title.TextSize = 22
 title.Parent = frame
@@ -59,78 +71,84 @@ local credit = Instance.new("TextLabel")
 credit.Size = UDim2.new(1,0,0,20)
 credit.Position = UDim2.new(0,0,0,30)
 credit.Text = "by Vex TM"
-credit.TextColor3 = Color3.new(1,1,1)
+credit.TextColor3 = Color3.fromRGB(200,200,200)
 credit.BackgroundTransparency = 1
 credit.Font = Enum.Font.Gotham
 credit.TextSize = 14
 credit.Parent = frame
 
--- Helper function
+-- Helper function to create buttons
 local function createButton(name,pos)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0,140,0,40)
+	btn.Size = UDim2.new(0,150,0,40)
 	btn.Position = pos
 	btn.Text = name
-	btn.TextColor3 = Color3.new(1,1,1)
-	btn.BackgroundColor3 = Color3.fromRGB(0,140,255)
+	btn.TextColor3 = Color3.fromRGB(255,255,255)
+	btn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
 	btn.Font = Enum.Font.GothamBold
 	btn.TextSize = 18
 	btn.Parent = frame
+	local corner = Instance.new("UICorner", btn)
+	corner.CornerRadius = UDim.new(0,10)
+	-- Hover effect
+	btn.MouseEnter:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(0,150,255) end)
+	btn.MouseLeave:Connect(function() btn.BackgroundColor3 = Color3.fromRGB(0,120,255) end)
 	return btn
 end
 
 -- Labels and Buttons
 local speedLabel = Instance.new("TextLabel")
 speedLabel.Size = UDim2.new(1,0,0,30)
-speedLabel.Position = UDim2.new(0,0,0,50)
+speedLabel.Position = UDim2.new(0,0,0,60)
 speedLabel.BackgroundTransparency = 1
-speedLabel.TextColor3 = Color3.new(1,1,1)
+speedLabel.TextColor3 = Color3.fromRGB(255,255,255)
 speedLabel.Font = Enum.Font.Gotham
 speedLabel.TextSize = 18
 speedLabel.Text = "WalkSpeed: 16"
 speedLabel.Parent = frame
 
-local speedMinus = createButton("-",UDim2.new(0,20,0,80))
-local speedPlus = createButton("+",UDim2.new(0,160,0,80))
+local speedMinus = createButton("-",UDim2.new(0,20,0,90))
+local speedPlus = createButton("+",UDim2.new(0,170,0,90))
 
 local jumpLabel = Instance.new("TextLabel")
 jumpLabel.Size = UDim2.new(1,0,0,30)
-jumpLabel.Position = UDim2.new(0,0,0,130)
+jumpLabel.Position = UDim2.new(0,0,0,140)
 jumpLabel.BackgroundTransparency = 1
-jumpLabel.TextColor3 = Color3.new(1,1,1)
+jumpLabel.TextColor3 = Color3.fromRGB(255,255,255)
 jumpLabel.Font = Enum.Font.Gotham
 jumpLabel.TextSize = 18
 jumpLabel.Text = "JumpPower: 50"
 jumpLabel.Parent = frame
 
-local jumpMinus = createButton("-",UDim2.new(0,20,0,160))
-local jumpPlus = createButton("+",UDim2.new(0,160,0,160))
+local jumpMinus = createButton("-",UDim2.new(0,20,0,170))
+local jumpPlus = createButton("+",UDim2.new(0,170,0,170))
 
-local espButton = createButton("ESP: OFF",UDim2.new(0,20,0,210))
-local infJumpButton = createButton("InfJump: OFF",UDim2.new(0,160,0,210))
-local noclipButton = createButton("NoClip: OFF",UDim2.new(0,20,0,260))
-local flyButton = createButton("Fly: OFF",UDim2.new(0,160,0,260))
+local espButton = createButton("ESP: OFF",UDim2.new(0,20,0,220))
+local infJumpButton = createButton("InfJump: OFF",UDim2.new(0,170,0,220))
+local noclipButton = createButton("NoClip: OFF",UDim2.new(0,20,0,270))
+local flyButton = createButton("Fly: OFF",UDim2.new(0,170,0,270))
 
 local flySpeedLabel = Instance.new("TextLabel")
 flySpeedLabel.Size = UDim2.new(1,0,0,30)
-flySpeedLabel.Position = UDim2.new(0,0,0,310)
+flySpeedLabel.Position = UDim2.new(0,0,0,320)
 flySpeedLabel.BackgroundTransparency = 1
-flySpeedLabel.TextColor3 = Color3.new(1,1,1)
+flySpeedLabel.TextColor3 = Color3.fromRGB(255,255,255)
 flySpeedLabel.Font = Enum.Font.Gotham
 flySpeedLabel.TextSize = 18
 flySpeedLabel.Text = "FlySpeed: 50"
 flySpeedLabel.Parent = frame
 
-local flyMinus = createButton("-",UDim2.new(0,20,0,340))
-local flyPlus = createButton("+",UDim2.new(0,160,0,340))
+local flyMinus = createButton("-",UDim2.new(0,20,0,350))
+local flyPlus = createButton("+",UDim2.new(0,170,0,350))
 
--- Functions
+-- Function to get humanoid
 local function getHumanoid()
 	if player.Character then
 		return player.Character:FindFirstChildOfClass("Humanoid")
 	end
 end
 
+-- Update label values
 local function updateLabels()
 	local hum = getHumanoid()
 	if hum then
@@ -140,24 +158,23 @@ local function updateLabels()
 	flySpeedLabel.Text = "FlySpeed: "..math.floor(flySpeed)
 end
 
--- Button Events
+-- Button actions
 speedMinus.MouseButton1Click:Connect(function() local h=getHumanoid();if h then h.WalkSpeed-=INCREMENT end;updateLabels() end)
 speedPlus.MouseButton1Click:Connect(function() local h=getHumanoid();if h then h.WalkSpeed+=INCREMENT end;updateLabels() end)
 jumpMinus.MouseButton1Click:Connect(function() local h=getHumanoid();if h then h.JumpPower-=INCREMENT end;updateLabels() end)
 jumpPlus.MouseButton1Click:Connect(function() local h=getHumanoid();if h then h.JumpPower+=INCREMENT end;updateLabels() end)
 flyMinus.MouseButton1Click:Connect(function() flySpeed-=FLY_SPEED_INCREMENT;updateLabels() end)
 flyPlus.MouseButton1Click:Connect(function() flySpeed+=FLY_SPEED_INCREMENT;updateLabels() end)
-
 espButton.MouseButton1Click:Connect(function() espEnabled = not espEnabled; espButton.Text="ESP: "..(espEnabled and "ON" or "OFF") end)
 infJumpButton.MouseButton1Click:Connect(function() infJumpEnabled = not infJumpEnabled; infJumpButton.Text="InfJump: "..(infJumpEnabled and "ON" or "OFF") end)
 noclipButton.MouseButton1Click:Connect(function() noclipEnabled = not noclipEnabled; noclipButton.Text="NoClip: "..(noclipEnabled and "ON" or "OFF") end)
 flyButton.MouseButton1Click:Connect(function() flyEnabled = not flyEnabled; flyButton.Text="Fly: "..(flyEnabled and "ON" or "OFF") end)
 
--- Panel Toggle (Hide/Show Entire GUI)
-local guiVisible = true
+-- Toggle panel visibility (button always visible)
+local panelVisible = true
 toggleButton.MouseButton1Click:Connect(function()
-	guiVisible = not guiVisible
-	screenGui.Enabled = guiVisible
+	panelVisible = not panelVisible
+		frame.Visible = panelVisible
 end)
 
 -- Infinite Jump
@@ -205,7 +222,7 @@ RunService.RenderStepped:Connect(function()
 			bodyGyro.Parent = root
 		end
 
-				local moveVector = Vector3.new(0,0,0)
+		local moveVector = Vector3.new(0,0,0)
 		if joystick then
 			local v = joystick.MoveVector
 			moveVector = Vector3.new(v.X,0,v.Y)
@@ -246,7 +263,6 @@ local function createESP(p)
 
 	local espColor = (p.Team == player.Team) and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
 
-	-- Box hitbox
 	local box = Instance.new("BoxHandleAdornment")
 	box.Adornee = hrp
 	box.Size = Vector3.new(2,3,1)
@@ -256,7 +272,6 @@ local function createESP(p)
 	box.Name = "ESP_Box"
 	box.Parent = ESPFolder
 
-	-- BillboardGui for name + health
 	local billboard = Instance.new("BillboardGui")
 	billboard.Adornee = hrp
 	billboard.Size = UDim2.new(0,150,0,50)
