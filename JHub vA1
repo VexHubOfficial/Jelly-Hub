@@ -36,7 +36,7 @@ toggleButton.Draggable = true
 -- Admin Panel
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0,320,0,380)
-frame.Position = UDim2.new(0.5,-160,1,0)
+frame.Position = UDim2.new(0.5,-160,0.5,-190)
 frame.BackgroundColor3 = Color3.fromRGB(0,170,255)
 frame.Active = true
 frame.Draggable = true
@@ -153,14 +153,11 @@ infJumpButton.MouseButton1Click:Connect(function() infJumpEnabled = not infJumpE
 noclipButton.MouseButton1Click:Connect(function() noclipEnabled = not noclipEnabled; noclipButton.Text="NoClip: "..(noclipEnabled and "ON" or "OFF") end)
 flyButton.MouseButton1Click:Connect(function() flyEnabled = not flyEnabled; flyButton.Text="Fly: "..(flyEnabled and "ON" or "OFF") end)
 
--- Panel Slide Animation
-local panelVisible = false
+-- Panel Toggle (Hide/Show Entire GUI)
+local guiVisible = true
 toggleButton.MouseButton1Click:Connect(function()
-	panelVisible = not panelVisible
-	local goalY = panelVisible and 0.5 or 1
-	local tweenInfo = TweenInfo.new(0.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
-	local tween = TweenService:Create(frame,tweenInfo,{Position=UDim2.new(frame.Position.X.Scale,frame.Position.X.Offset,goalY,frame.Position.Y.Offset)})
-	tween:Play()
+	guiVisible = not guiVisible
+	screenGui.Enabled = guiVisible
 end)
 
 -- Infinite Jump
@@ -208,7 +205,7 @@ RunService.RenderStepped:Connect(function()
 			bodyGyro.Parent = root
 		end
 
-		local moveVector = Vector3.new(0,0,0)
+				local moveVector = Vector3.new(0,0,0)
 		if joystick then
 			local v = joystick.MoveVector
 			moveVector = Vector3.new(v.X,0,v.Y)
@@ -217,8 +214,12 @@ RunService.RenderStepped:Connect(function()
 		local camCFrame = workspace.CurrentCamera.CFrame
 		moveVector = camCFrame:VectorToWorldSpace(Vector3.new(moveVector.X,0,moveVector.Z))
 
-		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveVector = moveVector + Vector3.new(0,1,0) end
-		if UserInputService:IsKeyDown(Enum.KeyCode.C) then moveVector = moveVector + Vector3.new(0,-1,0) end
+		if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+			moveVector = moveVector + Vector3.new(0,1,0)
+		end
+		if UserInputService:IsKeyDown(Enum.KeyCode.C) then
+			moveVector = moveVector + Vector3.new(0,-1,0)
+		end
 
 		bodyVelocity.Velocity = moveVector * flySpeed
 		bodyGyro.CFrame = CFrame.new(root.Position, root.Position + camCFrame.LookVector)
@@ -245,6 +246,7 @@ local function createESP(p)
 
 	local espColor = (p.Team == player.Team) and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
 
+	-- Box hitbox
 	local box = Instance.new("BoxHandleAdornment")
 	box.Adornee = hrp
 	box.Size = Vector3.new(2,3,1)
@@ -254,6 +256,7 @@ local function createESP(p)
 	box.Name = "ESP_Box"
 	box.Parent = ESPFolder
 
+	-- BillboardGui for name + health
 	local billboard = Instance.new("BillboardGui")
 	billboard.Adornee = hrp
 	billboard.Size = UDim2.new(0,150,0,50)
