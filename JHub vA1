@@ -1,0 +1,316 @@
+--// Jelly's Panel by Vex TM
+--// Place in StarterPlayerScripts
+
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local INCREMENT = 2
+local FLY_SPEED_INCREMENT = 2
+
+-- STATES
+local flyEnabled, noclipEnabled, infJumpEnabled, espEnabled = false, false, false, false
+local flySpeed = 50
+
+-- MAIN GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "JellyAdminGUI"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
+
+-- Toggle Button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0,100,0,50)
+toggleButton.Position = UDim2.new(0.05,0,0.05,0)
+toggleButton.Text = "Jelly"
+toggleButton.TextColor3 = Color3.new(1,1,1)
+toggleButton.BackgroundColor3 = Color3.fromRGB(0,170,255)
+toggleButton.Font = Enum.Font.GothamBold
+toggleButton.TextSize = 18
+toggleButton.Parent = screenGui
+toggleButton.Active = true
+toggleButton.Draggable = true
+
+-- Admin Panel
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0,320,0,380)
+frame.Position = UDim2.new(0.5,-160,1,0)
+frame.BackgroundColor3 = Color3.fromRGB(0,170,255)
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+frame.Visible = true
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,0,40)
+title.Position = UDim2.new(0,0,0,0)
+title.Text = "Jelly's Panel"
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundColor3 = Color3.fromRGB(0,120,255)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 22
+title.Parent = frame
+
+-- Credit
+local credit = Instance.new("TextLabel")
+credit.Size = UDim2.new(1,0,0,20)
+credit.Position = UDim2.new(0,0,0,30)
+credit.Text = "by Vex TM"
+credit.TextColor3 = Color3.new(1,1,1)
+credit.BackgroundTransparency = 1
+credit.Font = Enum.Font.Gotham
+credit.TextSize = 14
+credit.Parent = frame
+
+-- Helper function
+local function createButton(name,pos)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0,140,0,40)
+	btn.Position = pos
+	btn.Text = name
+	btn.TextColor3 = Color3.new(1,1,1)
+	btn.BackgroundColor3 = Color3.fromRGB(0,140,255)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 18
+	btn.Parent = frame
+	return btn
+end
+
+-- Labels and Buttons
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Size = UDim2.new(1,0,0,30)
+speedLabel.Position = UDim2.new(0,0,0,50)
+speedLabel.BackgroundTransparency = 1
+speedLabel.TextColor3 = Color3.new(1,1,1)
+speedLabel.Font = Enum.Font.Gotham
+speedLabel.TextSize = 18
+speedLabel.Text = "WalkSpeed: 16"
+speedLabel.Parent = frame
+
+local speedMinus = createButton("-",UDim2.new(0,20,0,80))
+local speedPlus = createButton("+",UDim2.new(0,160,0,80))
+
+local jumpLabel = Instance.new("TextLabel")
+jumpLabel.Size = UDim2.new(1,0,0,30)
+jumpLabel.Position = UDim2.new(0,0,0,130)
+jumpLabel.BackgroundTransparency = 1
+jumpLabel.TextColor3 = Color3.new(1,1,1)
+jumpLabel.Font = Enum.Font.Gotham
+jumpLabel.TextSize = 18
+jumpLabel.Text = "JumpPower: 50"
+jumpLabel.Parent = frame
+
+local jumpMinus = createButton("-",UDim2.new(0,20,0,160))
+local jumpPlus = createButton("+",UDim2.new(0,160,0,160))
+
+local espButton = createButton("ESP: OFF",UDim2.new(0,20,0,210))
+local infJumpButton = createButton("InfJump: OFF",UDim2.new(0,160,0,210))
+local noclipButton = createButton("NoClip: OFF",UDim2.new(0,20,0,260))
+local flyButton = createButton("Fly: OFF",UDim2.new(0,160,0,260))
+
+local flySpeedLabel = Instance.new("TextLabel")
+flySpeedLabel.Size = UDim2.new(1,0,0,30)
+flySpeedLabel.Position = UDim2.new(0,0,0,310)
+flySpeedLabel.BackgroundTransparency = 1
+flySpeedLabel.TextColor3 = Color3.new(1,1,1)
+flySpeedLabel.Font = Enum.Font.Gotham
+flySpeedLabel.TextSize = 18
+flySpeedLabel.Text = "FlySpeed: 50"
+flySpeedLabel.Parent = frame
+
+local flyMinus = createButton("-",UDim2.new(0,20,0,340))
+local flyPlus = createButton("+",UDim2.new(0,160,0,340))
+
+-- Functions
+local function getHumanoid()
+	if player.Character then
+		return player.Character:FindFirstChildOfClass("Humanoid")
+	end
+end
+
+local function updateLabels()
+	local hum = getHumanoid()
+	if hum then
+		speedLabel.Text = "WalkSpeed: "..math.floor(hum.WalkSpeed)
+		jumpLabel.Text = "JumpPower: "..math.floor(hum.JumpPower)
+	end
+	flySpeedLabel.Text = "FlySpeed: "..math.floor(flySpeed)
+end
+
+-- Button Events
+speedMinus.MouseButton1Click:Connect(function() local h=getHumanoid();if h then h.WalkSpeed-=INCREMENT end;updateLabels() end)
+speedPlus.MouseButton1Click:Connect(function() local h=getHumanoid();if h then h.WalkSpeed+=INCREMENT end;updateLabels() end)
+jumpMinus.MouseButton1Click:Connect(function() local h=getHumanoid();if h then h.JumpPower-=INCREMENT end;updateLabels() end)
+jumpPlus.MouseButton1Click:Connect(function() local h=getHumanoid();if h then h.JumpPower+=INCREMENT end;updateLabels() end)
+flyMinus.MouseButton1Click:Connect(function() flySpeed-=FLY_SPEED_INCREMENT;updateLabels() end)
+flyPlus.MouseButton1Click:Connect(function() flySpeed+=FLY_SPEED_INCREMENT;updateLabels() end)
+
+espButton.MouseButton1Click:Connect(function() espEnabled = not espEnabled; espButton.Text="ESP: "..(espEnabled and "ON" or "OFF") end)
+infJumpButton.MouseButton1Click:Connect(function() infJumpEnabled = not infJumpEnabled; infJumpButton.Text="InfJump: "..(infJumpEnabled and "ON" or "OFF") end)
+noclipButton.MouseButton1Click:Connect(function() noclipEnabled = not noclipEnabled; noclipButton.Text="NoClip: "..(noclipEnabled and "ON" or "OFF") end)
+flyButton.MouseButton1Click:Connect(function() flyEnabled = not flyEnabled; flyButton.Text="Fly: "..(flyEnabled and "ON" or "OFF") end)
+
+-- Panel Slide Animation
+local panelVisible = false
+toggleButton.MouseButton1Click:Connect(function()
+	panelVisible = not panelVisible
+	local goalY = panelVisible and 0.5 or 1
+	local tweenInfo = TweenInfo.new(0.4,Enum.EasingStyle.Quad,Enum.EasingDirection.Out)
+	local tween = TweenService:Create(frame,tweenInfo,{Position=UDim2.new(frame.Position.X.Scale,frame.Position.X.Offset,goalY,frame.Position.Y.Offset)})
+	tween:Play()
+end)
+
+-- Infinite Jump
+UserInputService.JumpRequest:Connect(function()
+	if infJumpEnabled then
+		local h = getHumanoid()
+		if h then h:ChangeState(Enum.HumanoidStateType.Jumping) end
+	end
+end)
+
+-- NoClip
+RunService.Stepped:Connect(function()
+	if noclipEnabled and player.Character then
+		for _,p in pairs(player.Character:GetDescendants()) do
+			if p:IsA("BasePart") then p.CanCollide=false end
+		end
+	end
+end)
+
+-- Fly
+local flying=false
+local bodyVelocity
+local bodyGyro
+
+RunService.RenderStepped:Connect(function()
+	local h = getHumanoid()
+	if not h or not player.Character then return end
+	local root = player.Character:FindFirstChild("HumanoidRootPart")
+	if flyEnabled and root then
+		if not flying then
+			flying = true
+			bodyVelocity = Instance.new("BodyVelocity")
+			bodyVelocity.MaxForce = Vector3.new(9e9,9e9,9e9)
+			bodyVelocity.Velocity = Vector3.new(0,0,0)
+			bodyVelocity.Parent = root
+
+			bodyGyro = Instance.new("BodyGyro")
+			bodyGyro.MaxTorque = Vector3.new(9e9,9e9,9e9)
+			bodyGyro.CFrame = root.CFrame
+			bodyGyro.Parent = root
+		end
+
+		local cam = workspace.CurrentCamera
+		local moveVector = Vector3.new(
+			UserInputService:IsKeyDown(Enum.KeyCode.D) and 1 or UserInputService:IsKeyDown(Enum.KeyCode.A) and -1 or 0,
+			UserInputService:IsKeyDown(Enum.KeyCode.Space) and 1 or UserInputService:IsKeyDown(Enum.KeyCode.C) and -1 or 0,
+			UserInputService:IsKeyDown(Enum.KeyCode.S) and 1 or UserInputService:IsKeyDown(Enum.KeyCode.W) and -1 or 0
+		)
+		moveVector = cam.CFrame:VectorToWorldSpace(moveVector)
+		bodyVelocity.Velocity = moveVector * flySpeed
+		bodyGyro.CFrame = CFrame.new(root.Position, root.Position + cam.CFrame.LookVector)
+	else
+		if flying then
+			flying = false
+			if bodyVelocity then bodyVelocity:Destroy() end
+			if bodyGyro then bodyGyro:Destroy() end
+		end
+	end
+end)
+
+-- TEAM-COLORED ESP
+local ESPFolder = Instance.new("Folder")
+ESPFolder.Name = "ESP_Objects"
+ESPFolder.Parent = workspace
+
+local function createESP(p)
+	if p == player then return end
+	if not p.Character then return end
+	local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+	local hum = p.Character:FindFirstChildOfClass("Humanoid")
+	if not hrp or not hum then return end
+
+	local espColor = (p.Team == player.Team) and Color3.fromRGB(0,255,0) or Color3.fromRGB(255,0,0)
+
+	-- Box hitbox
+	local box = Instance.new("BoxHandleAdornment")
+	box.Adornee = hrp
+	box.Size = Vector3.new(2,3,1)
+	box.Color3 = espColor
+	box.Transparency = 0.5
+	box.AlwaysOnTop = true
+	box.Name = "ESP_Box"
+	box.Parent = ESPFolder
+
+	-- Billboard for name + health
+	local billboard = Instance.new("BillboardGui")
+	billboard.Adornee = hrp
+	billboard.Size = UDim2.new(0,150,0,50)
+	billboard.AlwaysOnTop = true
+	billboard.StudsOffset = Vector3.new(0,3,0)
+	billboard.Parent = ESPFolder
+
+	local nameLabel = Instance.new("TextLabel")
+	nameLabel.Size = UDim2.new(1,0,0.5,0)
+	nameLabel.BackgroundTransparency = 1
+	nameLabel.TextColor3 = espColor
+	nameLabel.Font = Enum.Font.GothamBold
+	nameLabel.TextSize = 18
+	nameLabel.Text = p.DisplayName
+	nameLabel.Parent = billboard
+
+	local healthLabel = Instance.new("TextLabel")
+	healthLabel.Size = UDim2.new(1,0,0.5,0)
+	healthLabel.Position = UDim2.new(0,0,0.5,0)
+	healthLabel.BackgroundTransparency = 1
+	healthLabel.TextColor3 = Color3.new(1,1,0)
+	healthLabel.Font = Enum.Font.GothamBold
+	healthLabel.TextSize = 16
+	healthLabel.Text = "Health: "..math.floor(hum.Health)
+	healthLabel.Parent = billboard
+
+	local conn
+	conn = RunService.RenderStepped:Connect(function()
+		if not espEnabled or not p.Character or not hrp.Parent then
+			box:Destroy()
+			billboard:Destroy()
+			conn:Disconnect()
+			return
+		end
+		healthLabel.Text = "Health: "..math.floor(hum.Health)
+	end)
+end
+
+-- Player added/removed events
+game.Players.PlayerAdded:Connect(function(p)
+	p.CharacterAdded:Connect(function()
+		task.wait(1)
+		if espEnabled then createESP(p) end
+	end)
+end)
+
+game.Players.PlayerRemoving:Connect(function(p)
+	for _, obj in pairs(ESPFolder:GetChildren()) do
+		if obj:IsA("BoxHandleAdornment") or obj:IsA("BillboardGui") then
+			if obj.Adornee and obj.Adornee.Parent == p.Character then
+				obj:Destroy()
+			end
+		end
+	end
+end)
+
+-- Continuous ESP check
+RunService.RenderStepped:Connect(function()
+	if not espEnabled then return end
+	for _, p in pairs(game.Players:GetPlayers()) do
+		if p ~= player and p.Character and not ESPFolder:FindFirstChild(p.Name.."_ESP") then
+			createESP(p)
+		end
+	end
+end)
+
+-- Initialize labels
+updateLabels()
