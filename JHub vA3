@@ -1,0 +1,617 @@
+--// 🩸 JELLY HUB - BY VEX
+--// SECTION 1: Core Framework + Movement Tab
+-- Place in StarterPlayerScripts
+-- Section 2 will expand Players + GUI tabs.
+
+-- CONFIG
+local PLAYER = game.Players.LocalPlayer
+local CHAR = PLAYER.Character or PLAYER.CharacterAdded:Wait()
+local HUM = CHAR:WaitForChild("Humanoid")
+local UIS = game:GetService("UserInputService")
+local RS = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+
+local INCREMENT = 2 -- Movement increment value
+
+--// SCREEN GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "JellyHub"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+gui.Parent = PLAYER:WaitForChild("PlayerGui")
+
+--// OVERLAY
+local overlay = Instance.new("Frame")
+overlay.Size = UDim2.new(1, 0, 1, 0)
+overlay.BackgroundColor3 = Color3.fromRGB(80, 0, 0)
+overlay.BackgroundTransparency = 1
+overlay.Visible = false
+overlay.ZIndex = 1
+overlay.Parent = gui
+
+-- Fade animation
+local function fadeOverlay(show)
+	if show then
+		overlay.Visible = true
+		TweenService:Create(overlay, TweenInfo.new(0.3), {BackgroundTransparency = 0.5}):Play()
+	else
+		TweenService:Create(overlay, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+		task.delay(0.3, function()
+			if overlay.BackgroundTransparency >= 1 then
+				overlay.Visible = false
+			end
+		end)
+	end
+end
+
+--// MAIN PANEL
+local panel = Instance.new("Frame")
+panel.Size = UDim2.new(0, 325, 0, 230)
+panel.Position = UDim2.new(0.5, -162, 0.5, -115)
+panel.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+panel.BackgroundTransparency = 0.08
+panel.BorderSizePixel = 0
+panel.Active = true
+panel.Draggable = true
+panel.Visible = false
+panel.ZIndex = 2
+panel.Parent = gui
+
+-- Rounded edges
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 10)
+corner.Parent = panel
+
+--// TITLE BAR
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 40)
+titleBar.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+titleBar.BorderSizePixel = 0
+titleBar.ZIndex = 3
+titleBar.Parent = panel
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 10)
+titleCorner.Parent = titleBar
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 1, 0)
+title.BackgroundTransparency = 1
+title.Text = "🩸 Jelly Hub"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 22
+title.ZIndex = 4
+title.Parent = titleBar
+
+local credit = Instance.new("TextLabel")
+credit.Size = UDim2.new(1, -10, 0, 18)
+credit.Position = UDim2.new(0, 0, 1, -20)
+credit.BackgroundTransparency = 1
+credit.Text = "By Vex"
+credit.TextColor3 = Color3.fromRGB(255, 200, 200)
+credit.Font = Enum.Font.GothamSemibold
+credit.TextSize = 14
+credit.ZIndex = 4
+credit.Parent = titleBar
+
+--// TAB BUTTONS BAR
+local tabBar = Instance.new("Frame")
+tabBar.Size = UDim2.new(1, 0, 0, 35)
+tabBar.Position = UDim2.new(0, 0, 0, 40)
+tabBar.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+tabBar.BorderSizePixel = 0
+tabBar.ZIndex = 3
+tabBar.Parent = panel
+
+local function makeTabButton(name, position)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0.33, 0, 1, 0)
+	btn.Position = UDim2.new(position, 0, 0, 0)
+	btn.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+	btn.Text = name
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 18
+	btn.BorderSizePixel = 0
+	btn.ZIndex = 4
+	btn.Parent = tabBar
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = btn
+	return btn
+end
+
+local movementTabBtn = makeTabButton("Movement", 0)
+local playersTabBtn = makeTabButton("Players", 0.33)
+local guiTabBtn = makeTabButton("GUI", 0.66)
+
+--// CONTENT AREA
+local content = Instance.new("Frame")
+content.Size = UDim2.new(1, 0, 1, -75)
+content.Position = UDim2.new(0, 0, 0, 75)
+content.BackgroundTransparency = 1
+content.ZIndex = 3
+content.Parent = panel
+
+-- Tab containers
+local movementTab = Instance.new("Frame")
+movementTab.Size = UDim2.new(1, 0, 1, 0)
+movementTab.BackgroundTransparency = 1
+movementTab.ZIndex = 4
+movementTab.Parent = content
+
+local playersTab = Instance.new("Frame")
+playersTab.Size = UDim2.new(1, 0, 1, 0)
+playersTab.BackgroundTransparency = 1
+playersTab.Visible = false
+playersTab.ZIndex = 4
+playersTab.Parent = content
+
+local guiTab = Instance.new("Frame")
+guiTab.Size = UDim2.new(1, 0, 1, 0)
+guiTab.BackgroundTransparency = 1
+guiTab.Visible = false
+guiTab.ZIndex = 4
+guiTab.Parent = content
+
+-- Switch tab function
+local function showTab(tab)
+	movementTab.Visible = false
+	playersTab.Visible = false
+	guiTab.Visible = false
+	tab.Visible = true
+end
+
+movementTabBtn.MouseButton1Click:Connect(function()
+	showTab(movementTab)
+end)
+playersTabBtn.MouseButton1Click:Connect(function()
+	showTab(playersTab)
+end)
+guiTabBtn.MouseButton1Click:Connect(function()
+	showTab(guiTab)
+end)
+
+--------------------------------------------------------
+-- MOVEMENT TAB FUNCTIONALITY
+--------------------------------------------------------
+
+local function createLabel(parent, text, pos)
+	local lbl = Instance.new("TextLabel")
+	lbl.Size = UDim2.new(0.4, 0, 0, 25)
+	lbl.Position = pos
+	lbl.BackgroundTransparency = 1
+	lbl.Text = text
+	lbl.TextColor3 = Color3.new(1, 1, 1)
+	lbl.TextSize = 18
+	lbl.Font = Enum.Font.GothamSemibold
+	lbl.ZIndex = 5
+	lbl.Parent = parent
+	return lbl
+end
+
+local function createValueLabel(parent, pos)
+	local val = Instance.new("TextLabel")
+	val.Size = UDim2.new(0.2, 0, 0, 25)
+	val.Position = pos
+	val.BackgroundTransparency = 1
+	val.TextColor3 = Color3.fromRGB(255, 255, 0)
+	val.TextSize = 18
+	val.Font = Enum.Font.Gotham
+	val.ZIndex = 5
+	val.Parent = parent
+	return val
+end
+
+local function createButton(parent, symbol, pos)
+	local btn = Instance.new("TextButton")
+	btn.Size = UDim2.new(0, 25, 0, 25)
+	btn.Position = pos
+	btn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+	btn.Text = symbol
+	btn.TextColor3 = Color3.new(1, 1, 1)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 20
+	btn.ZIndex = 5
+	btn.AutoButtonColor = true
+	btn.Parent = parent
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 6)
+	corner.Parent = btn
+	return btn
+end
+
+-- Speed controls
+local speedLabel = createLabel(movementTab, "Speed:", UDim2.new(0.05, 0, 0, 10))
+local speedValue = createValueLabel(movementTab, UDim2.new(0.45, 0, 0, 10))
+local speedPlus = createButton(movementTab, "+", UDim2.new(0.7, 0, 0, 10))
+local speedMinus = createButton(movementTab, "-", UDim2.new(0.85, 0, 0, 10))
+
+-- Jump controls
+local jumpLabel = createLabel(movementTab, "JumpPower:", UDim2.new(0.05, 0, 0, 45))
+local jumpValue = createValueLabel(movementTab, UDim2.new(0.45, 0, 0, 45))
+local jumpPlus = createButton(movementTab, "+", UDim2.new(0.7, 0, 0, 45))
+local jumpMinus = createButton(movementTab, "-", UDim2.new(0.85, 0, 0, 45))
+
+-- Inf Jump + Noclip
+local infJumpLabel = createLabel(movementTab, "Infinite Jump:", UDim2.new(0.05, 0, 0, 80))
+local infJumpToggle = createButton(movementTab, "❌", UDim2.new(0.45, 0, 0, 80))
+
+local noclipLabel = createLabel(movementTab, "Noclip:", UDim2.new(0.05, 0, 0, 115))
+local noclipToggle = createButton(movementTab, "❌", UDim2.new(0.45, 0, 0, 115))
+
+-- Update display
+local function updateValues()
+	speedValue.Text = tostring(HUM.WalkSpeed)
+	jumpValue.Text = tostring(HUM.JumpPower)
+end
+updateValues()
+
+-- Movement logic
+speedPlus.MouseButton1Click:Connect(function()
+	HUM.WalkSpeed += INCREMENT
+	updateValues()
+end)
+speedMinus.MouseButton1Click:Connect(function()
+	HUM.WalkSpeed -= INCREMENT
+	updateValues()
+end)
+jumpPlus.MouseButton1Click:Connect(function()
+	HUM.JumpPower += INCREMENT
+	updateValues()
+end)
+jumpMinus.MouseButton1Click:Connect(function()
+	HUM.JumpPower -= INCREMENT
+	updateValues()
+end)
+
+-- Infinite Jump
+local infJumpEnabled = false
+infJumpToggle.MouseButton1Click:Connect(function()
+	infJumpEnabled = not infJumpEnabled
+	infJumpToggle.Text = infJumpEnabled and "✅" or "❌"
+end)
+UIS.JumpRequest:Connect(function()
+	if infJumpEnabled and HUM then
+		HUM:ChangeState(Enum.HumanoidStateType.Jumping)
+	end
+end)
+
+-- Noclip
+local noclipEnabled = false
+noclipToggle.MouseButton1Click:Connect(function()
+	noclipEnabled = not noclipEnabled
+	noclipToggle.Text = noclipEnabled and "✅" or "❌"
+end)
+RS.Stepped:Connect(function()
+	if noclipEnabled and CHAR then
+		for _, part in pairs(CHAR:GetDescendants()) do
+			if part:IsA("BasePart") then
+				part.CanCollide = false
+			end
+		end
+	end
+end)
+
+PLAYER.CharacterAdded:Connect(function(newChar)
+	CHAR = newChar
+	HUM = CHAR:WaitForChild("Humanoid")
+	updateValues()
+end)
+
+--------------------------------------------------------
+-- TOGGLE BUTTON
+--------------------------------------------------------
+
+local toggle = Instance.new("TextButton")
+toggle.Size = UDim2.new(0, 60, 0, 60)
+toggle.Position = UDim2.new(0.05, 0, 0.3, 0)
+toggle.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+toggle.BackgroundTransparency = 0.4
+toggle.Text = "🩸"
+toggle.TextSize = 28
+toggle.TextColor3 = Color3.new(1, 1, 1)
+toggle.Font = Enum.Font.GothamBlack
+toggle.BorderSizePixel = 0
+toggle.Active = true
+toggle.Draggable = true
+toggle.ZIndex = 10
+toggle.Parent = gui
+
+local glow = Instance.new("UIStroke")
+glow.Thickness = 2
+glow.Color = Color3.fromRGB(255, 100, 100)
+glow.Parent = toggle
+
+local tCorner = Instance.new("UICorner")
+tCorner.CornerRadius = UDim.new(1, 0)
+tCorner.Parent = toggle
+
+-- Toggle open/close
+toggle.MouseButton1Click:Connect(function()
+	local state = not panel.Visible
+	panel.Visible = state
+	fadeOverlay(state)
+end)
+
+
+--// 🩸 JELLY HUB - BY VEX
+--// SECTION 2: Players Tab + GUI Tab
+-- Works with Section 1 (Core + Movement)
+
+local PLAYER = game.Players.LocalPlayer
+local RS = game:GetService("RunService")
+local LIGHTING = game:GetService("Lighting")
+local CAMERA = workspace.CurrentCamera
+
+-- Wait for GUI from Section 1
+local gui = PLAYER:WaitForChild("PlayerGui"):WaitForChild("JellyHub")
+local panel = gui:WaitForChild("Frame", 5) or gui:FindFirstChildWhichIsA("Frame")
+
+-- Tab frames
+local content = panel:FindFirstChildWhichIsA("Frame", true)
+local tabs = content:GetChildren()
+local movementTab, playersTab, guiTab
+for _, t in ipairs(tabs) do
+	if t.Name == "Frame" then
+		if not movementTab then movementTab = t
+		elseif not playersTab then playersTab = t
+		elseif not guiTab then guiTab = t end
+	end
+end
+
+--------------------------------------------------------
+-- PLAYERS TAB
+--------------------------------------------------------
+
+playersTab:ClearAllChildren()
+
+local playerList = Instance.new("ScrollingFrame")
+playerList.Size = UDim2.new(1, -10, 1, -10)
+playerList.Position = UDim2.new(0, 5, 0, 5)
+playerList.BackgroundTransparency = 1
+playerList.BorderSizePixel = 0
+playerList.CanvasSize = UDim2.new(0, 0, 0, 0)
+playerList.ScrollBarThickness = 6
+playerList.ZIndex = 4
+playerList.Parent = playersTab
+
+local layout = Instance.new("UIListLayout")
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Padding = UDim.new(0, 5)
+layout.Parent = playerList
+
+-- Store highlights
+local highlights = {}
+
+local function makePlayerEntry(plr)
+	if plr == PLAYER then return end
+	local item = Instance.new("Frame")
+	item.Size = UDim2.new(1, -10, 0, 70)
+	item.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+	item.BorderSizePixel = 0
+	item.ZIndex = 5
+	item.Parent = playerList
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 8)
+	corner.Parent = item
+
+	local thumb = Instance.new("ImageLabel")
+	thumb.Size = UDim2.new(0, 50, 0, 50)
+	thumb.Position = UDim2.new(0, 10, 0.5, -25)
+	thumb.BackgroundTransparency = 1
+	thumb.ZIndex = 6
+	thumb.Image = "rbxthumb://type=AvatarHeadShot&id=" .. plr.UserId .. "&w=100&h=100"
+	thumb.Parent = item
+
+	local nameLbl = Instance.new("TextLabel")
+	nameLbl.Size = UDim2.new(0.4, 0, 0, 25)
+	nameLbl.Position = UDim2.new(0, 70, 0, 10)
+	nameLbl.BackgroundTransparency = 1
+	nameLbl.Text = plr.DisplayName .. " (@" .. plr.Name .. ")"
+	nameLbl.TextColor3 = Color3.new(1, 1, 1)
+	nameLbl.TextSize = 16
+	nameLbl.Font = Enum.Font.GothamSemibold
+	nameLbl.ZIndex = 6
+	nameLbl.TextXAlignment = Enum.TextXAlignment.Left
+	nameLbl.Parent = item
+
+	local hpLbl = Instance.new("TextLabel")
+	hpLbl.Size = UDim2.new(0.4, 0, 0, 20)
+	hpLbl.Position = UDim2.new(0, 70, 0, 40)
+	hpLbl.BackgroundTransparency = 1
+	hpLbl.TextColor3 = Color3.fromRGB(255, 200, 200)
+	hpLbl.TextSize = 14
+	hpLbl.Font = Enum.Font.Gotham
+	hpLbl.ZIndex = 6
+	hpLbl.TextXAlignment = Enum.TextXAlignment.Left
+	hpLbl.Parent = item
+
+	local tpBtn = Instance.new("TextButton")
+	tpBtn.Size = UDim2.new(0, 55, 0, 25)
+	tpBtn.Position = UDim2.new(1, -190, 0.5, -12)
+	tpBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+	tpBtn.Text = "TP"
+	tpBtn.TextColor3 = Color3.new(1, 1, 1)
+	tpBtn.Font = Enum.Font.GothamBold
+	tpBtn.TextSize = 16
+	tpBtn.ZIndex = 6
+	tpBtn.Parent = item
+	local tpcorner = Instance.new("UICorner", tpBtn)
+	tpcorner.CornerRadius = UDim.new(0, 6)
+
+	local function makeESPButton(colorName, color, xOff)
+		local btn = Instance.new("TextButton")
+		btn.Size = UDim2.new(0, 45, 0, 25)
+		btn.Position = UDim2.new(1, xOff, 0.5, -12)
+		btn.BackgroundColor3 = color
+		btn.Text = colorName
+		btn.TextColor3 = Color3.new(1, 1, 1)
+		btn.Font = Enum.Font.GothamBold
+		btn.TextSize = 14
+		btn.ZIndex = 6
+		btn.Parent = item
+		local corner = Instance.new("UICorner", btn)
+		corner.CornerRadius = UDim.new(0, 6)
+		return btn
+	end
+
+	local redBtn = makeESPButton("Red", Color3.fromRGB(255, 0, 0), -130)
+	local blueBtn = makeESPButton("Blue", Color3.fromRGB(0, 100, 255), -80)
+	local greenBtn = makeESPButton("Green", Color3.fromRGB(0, 200, 0), -30)
+
+	-- Teleport
+	tpBtn.MouseButton1Click:Connect(function()
+		local char = PLAYER.Character
+		local targetChar = plr.Character
+		if char and targetChar and targetChar:FindFirstChild("HumanoidRootPart") then
+			local root = char:FindFirstChild("HumanoidRootPart")
+			if root then
+				root.CFrame = targetChar.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
+			end
+		end
+	end)
+
+	-- ESP
+	local function applyHighlight(color)
+		if highlights[plr] then highlights[plr]:Destroy() end
+		local char = plr.Character
+		if char then
+			local hl = Instance.new("Highlight")
+			hl.FillTransparency = 1
+			hl.OutlineTransparency = 0
+			hl.OutlineColor = color
+			hl.Parent = char
+			highlights[plr] = hl
+		end
+	end
+
+	redBtn.MouseButton1Click:Connect(function() applyHighlight(Color3.fromRGB(255, 0, 0)) end)
+	blueBtn.MouseButton1Click:Connect(function() applyHighlight(Color3.fromRGB(0, 100, 255)) end)
+	greenBtn.MouseButton1Click:Connect(function() applyHighlight(Color3.fromRGB(0, 200, 0)) end)
+
+	-- Health updates
+	local function updateHealth()
+		if plr.Character and plr.Character:FindFirstChildOfClass("Humanoid") then
+			local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+			hpLbl.Text = math.floor(hum.Health) .. " / " .. math.floor(hum.MaxHealth) .. " HP"
+		else
+			hpLbl.Text = "No character"
+		end
+	end
+
+	RS.Heartbeat:Connect(updateHealth)
+	updateHealth()
+end
+
+-- Populate player list
+local function refreshPlayers()
+	for _, child in ipairs(playerList:GetChildren()) do
+		if child:IsA("Frame") then child:Destroy() end
+	end
+	for _, p in ipairs(game.Players:GetPlayers()) do
+		makePlayerEntry(p)
+	end
+	playerList.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
+end
+
+game.Players.PlayerAdded:Connect(refreshPlayers)
+game.Players.PlayerRemoving:Connect(refreshPlayers)
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	playerList.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y)
+end)
+refreshPlayers()
+
+--------------------------------------------------------
+-- GUI TAB
+--------------------------------------------------------
+
+guiTab:ClearAllChildren()
+
+local fovLbl = Instance.new("TextLabel")
+fovLbl.Size = UDim2.new(0.4, 0, 0, 25)
+fovLbl.Position = UDim2.new(0.05, 0, 0, 10)
+fovLbl.BackgroundTransparency = 1
+fovLbl.Text = "FOV:"
+fovLbl.TextColor3 = Color3.new(1, 1, 1)
+fovLbl.TextSize = 18
+fovLbl.Font = Enum.Font.GothamSemibold
+fovLbl.Parent = guiTab
+
+local fovValue = Instance.new("TextLabel")
+fovValue.Size = UDim2.new(0.2, 0, 0, 25)
+fovValue.Position = UDim2.new(0.45, 0, 0, 10)
+fovValue.BackgroundTransparency = 1
+fovValue.TextColor3 = Color3.fromRGB(255, 255, 0)
+fovValue.TextSize = 18
+fovValue.Font = Enum.Font.Gotham
+fovValue.Parent = guiTab
+
+local fovPlus = Instance.new("TextButton")
+fovPlus.Size = UDim2.new(0, 25, 0, 25)
+fovPlus.Position = UDim2.new(0.7, 0, 0, 10)
+fovPlus.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+fovPlus.Text = "+"
+fovPlus.TextColor3 = Color3.new(1, 1, 1)
+fovPlus.Font = Enum.Font.GothamBold
+fovPlus.TextSize = 20
+fovPlus.Parent = guiTab
+Instance.new("UICorner", fovPlus).CornerRadius = UDim.new(0, 6)
+
+local fovMinus = fovPlus:Clone()
+fovMinus.Text = "-"
+fovMinus.Position = UDim2.new(0.85, 0, 0, 10)
+fovMinus.Parent = guiTab
+
+local glowLbl = Instance.new("TextLabel")
+glowLbl.Size = UDim2.new(0.4, 0, 0, 25)
+glowLbl.Position = UDim2.new(0.05, 0, 0, 50)
+glowLbl.BackgroundTransparency = 1
+glowLbl.Text = "Screen Glow:"
+glowLbl.TextColor3 = Color3.new(1, 1, 1)
+glowLbl.TextSize = 18
+glowLbl.Font = Enum.Font.GothamSemibold
+glowLbl.Parent = guiTab
+
+local glowToggle = Instance.new("TextButton")
+glowToggle.Size = UDim2.new(0, 40, 0, 25)
+glowToggle.Position = UDim2.new(0.45, 0, 0, 50)
+glowToggle.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+glowToggle.Text = "❌"
+glowToggle.TextColor3 = Color3.new(1, 1, 1)
+glowToggle.Font = Enum.Font.GothamBold
+glowToggle.TextSize = 18
+glowToggle.Parent = guiTab
+Instance.new("UICorner", glowToggle).CornerRadius = UDim.new(0, 6)
+
+local glow = LIGHTING:FindFirstChild("JellyHubGlow") or Instance.new("BloomEffect")
+glow.Name = "JellyHubGlow"
+glow.Enabled = false
+glow.Intensity = 0.4
+glow.Threshold = 1
+glow.Parent = LIGHTING
+
+-- GUI logic
+local function updateFOV()
+	fovValue.Text = tostring(math.floor(CAMERA.FieldOfView))
+end
+updateFOV()
+
+fovPlus.MouseButton1Click:Connect(function()
+	CAMERA.FieldOfView += 2
+	updateFOV()
+end)
+fovMinus.MouseButton1Click:Connect(function()
+	CAMERA.FieldOfView -= 2
+	updateFOV()
+end)
+
+local glowEnabled = false
+glowToggle.MouseButton1Click:Connect(function()
+	glowEnabled = not glowEnabled
+	glow.Enabled = glowEnabled
+	glowToggle.Text = glowEnabled and "✅" or "❌"
+end)
